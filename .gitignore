@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+
+# Virtual environments (uv venv, etc.)
+.venv/
+.venv*/
+venv/
+env/
+
+# Model checkpoints — released via the Hugging Face Hub, too large for git
+checkpoints/
+
+# Generated audio / test outputs
+/test_out/
+/syn_out/
+/out.wav
+/*.wav
+eval_out_smoke/
+
+# Internal-only scripts (not part of the released package)
+smoke_test.py
+upload_hf.py
+scripts/convert_checkpoint.py
+# Demo-page sites are separate git repos (own GitHub remotes), not part of this package
+*_demopage/
