@@ -1,0 +1,172 @@
+[
+  {
+    "concurrency": 1,
+    "duration_s": 45.0,
+    "requests": 40,
+    "errors": 0,
+    "rps": 0.89,
+    "audio_xrt": 4.4,
+    "ttfp_p50": 0.201,
+    "ttfp_p90": 0.205,
+    "ttfp_p95": 0.208,
+    "ttfp_p99": 0.571,
+    "ttfp_max": 0.571,
+    "ttlb_p50": 1.011,
+    "ttlb_p95": 2.567,
+    "ttlb_p99": 2.617,
+    "avg_audio_s": 4.96,
+    "server": {
+      "active": 0,
+      "waiting": 0,
+      "ticks": 3734,
+      "avg_tick_ms": 11.628,
+      "commit_blocks": 360
+    }
+  },
+  {
+    "concurrency": 8,
+    "duration_s": 47.3,
+    "requests": 290,
+    "errors": 0,
+    "rps": 6.13,
+    "audio_xrt": 27.9,
+    "ttfp_p50": 0.266,
+    "ttfp_p90": 0.349,
+    "ttfp_p95": 0.37,
+    "ttfp_p99": 0.466,
+    "ttfp_max": 0.66,
+    "ttlb_p50": 1.118,
+    "ttlb_p95": 2.886,
+    "ttlb_p99": 2.976,
+    "avg_audio_s": 4.56,
+    "server": {
+      "active": 0,
+      "waiting": 0,
+      "ticks": 7300,
+      "avg_tick_ms": 12.095,
+      "commit_blocks": 2381
+    }
+  },
+  {
+    "concurrency": 32,
+    "duration_s": 47.7,
+    "requests": 757,
+    "errors": 0,
+    "rps": 15.86,
+    "audio_xrt": 69.3,
+    "ttfp_p50": 0.477,
+    "ttfp_p90": 0.609,
+    "ttfp_p95": 0.661,
+    "ttfp_p99": 0.714,
+    "ttfp_max": 0.784,
+    "ttlb_p50": 1.771,
+    "ttlb_p95": 3.179,
+    "ttlb_p99": 4.736,
+    "avg_audio_s": 4.37,
+    "server": {
+      "active": 0,
+      "waiting": 0,
+      "ticks": 9662,
+      "avg_tick_ms": 13.689,
+      "commit_blocks": 7451
+    }
+  },
+  {
+    "concurrency": 128,
+    "duration_s": 49.2,
+    "requests": 1126,
+    "errors": 0,
+    "rps": 22.88,
+    "audio_xrt": 99.3,
+    "ttfp_p50": 1.605,
+    "ttfp_p90": 1.862,
+    "ttfp_p95": 1.892,
+    "ttfp_p99": 2.309,
+    "ttfp_max": 2.34,
+    "ttlb_p50": 5.071,
+    "ttlb_p95": 6.828,
+    "ttlb_p99": 12.93,
+    "avg_audio_s": 4.34,
+    "server": {
+      "active": 0,
+      "waiting": 0,
+      "ticks": 10652,
+      "avg_tick_ms": 16.73,
+      "commit_blocks": 14923
+    }
+  },
+  {
+    "concurrency": 256,
+    "duration_s": 52.8,
+    "requests": 1248,
+    "errors": 0,
+    "rps": 23.64,
+    "audio_xrt": 104.5,
+    "ttfp_p50": 5.164,
+    "ttfp_p90": 6.16,
+    "ttfp_p95": 6.343,
+    "ttfp_p99": 6.493,
+    "ttfp_max": 6.614,
+    "ttlb_p50": 9.877,
+    "ttlb_p95": 13.56,
+    "ttlb_p99": 22.156,
+    "avg_audio_s": 4.42,
+    "server": {
+      "active": 0,
+      "waiting": 0,
+      "ticks": 11468,
+      "avg_tick_ms": 19.699,
+      "commit_blocks": 23311
+    }
+  }
+]
+[
+  {
+    "concurrency": 1000,
+    "duration_s": 181.0,
+    "requests": 4288,
+    "errors": 0,
+    "rps": 23.69,
+    "audio_xrt": 104.1,
+    "ttfp_p50": 34.848,
+    "ttfp_p90": 35.872,
+    "ttfp_p95": 36.124,
+    "ttfp_p99": 36.396,
+    "ttfp_max": 36.868,
+    "ttlb_p50": 42.58,
+    "ttlb_p95": 48.708,
+    "ttlb_p99": 64.297,
+    "avg_audio_s": 4.4,
+    "server": {
+      "active": 0,
+      "waiting": 0,
+      "ticks": 12997,
+      "avg_tick_ms": 27.953,
+      "commit_blocks": 51956
+    }
+  },
+  {
+    "concurrency": 2000,
+    "duration_s": 222.8,
+    "requests": 5320,
+    "errors": 0,
+    "rps": 23.87,
+    "audio_xrt": 103.7,
+    "ttfp_p50": 76.827,
+    "ttfp_p90": 81.181,
+    "ttfp_p95": 81.462,
+    "ttfp_p99": 81.974,
+    "ttfp_max": 82.464,
+    "ttlb_p50": 84.752,
+    "ttlb_p95": 92.993,
+    "ttlb_p99": 108.617,
+    "avg_audio_s": 4.34,
+    "server": {
+      "active": 0,
+      "waiting": 0,
+      "ticks": 14819,
+      "avg_tick_ms": 35.796,
+      "commit_blocks": 87018
+    }
+  }
+]

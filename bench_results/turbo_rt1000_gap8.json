@@ -1,0 +1,27 @@
+[
+  {
+    "concurrency": 1000,
+    "duration_s": 194.3,
+    "requests": 11556,
+    "errors": 0,
+    "rps": 59.47,
+    "audio_xrt": 216.7,
+    "ttfp_p50": 0.369,
+    "ttfp_p90": 0.605,
+    "ttfp_p95": 0.658,
+    "ttfp_p99": 0.811,
+    "ttfp_max": 1.171,
+    "ttlb_p50": 7.89,
+    "ttlb_p95": 8.687,
+    "ttlb_p99": 9.221,
+    "stall_p95": 4.698,
+    "avg_audio_s": 3.64,
+    "server": {
+      "active": 0,
+      "waiting": 0,
+      "ticks": 14000,
+      "avg_tick_ms": 11.927,
+      "gen_tokens": 1018952
+    }
+  }
+]

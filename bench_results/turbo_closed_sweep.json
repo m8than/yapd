@@ -1,0 +1,102 @@
+[
+  {
+    "concurrency": 1,
+    "duration_s": 60.2,
+    "requests": 134,
+    "errors": 0,
+    "rps": 2.22,
+    "audio_xrt": 8.2,
+    "ttfp_p50": 0.08,
+    "ttfp_p90": 0.083,
+    "ttfp_p95": 0.084,
+    "ttfp_p99": 0.085,
+    "ttfp_max": 0.086,
+    "ttlb_p50": 0.453,
+    "ttlb_p95": 0.584,
+    "ttlb_p99": 0.652,
+    "stall_p95": 0.0,
+    "avg_audio_s": 3.67,
+    "server": {
+      "active": 0,
+      "waiting": 0,
+      "ticks": 40939,
+      "avg_tick_ms": 8.503,
+      "gen_tokens": 1918374
+    }
+  },
+  {
+    "concurrency": 32,
+    "duration_s": 60.6,
+    "requests": 2342,
+    "errors": 0,
+    "rps": 38.64,
+    "audio_xrt": 141.1,
+    "ttfp_p50": 0.187,
+    "ttfp_p90": 0.226,
+    "ttfp_p95": 0.27,
+    "ttfp_p99": 0.313,
+    "ttfp_max": 0.337,
+    "ttlb_p50": 0.766,
+    "ttlb_p95": 0.965,
+    "ttlb_p99": 1.054,
+    "stall_p95": 0.0,
+    "avg_audio_s": 3.65,
+    "server": {
+      "active": 0,
+      "waiting": 0,
+      "ticks": 51685,
+      "avg_tick_ms": 7.853,
+      "gen_tokens": 2125189
+    }
+  },
+  {
+    "concurrency": 256,
+    "duration_s": 62.8,
+    "requests": 3948,
+    "errors": 0,
+    "rps": 62.84,
+    "audio_xrt": 228.2,
+    "ttfp_p50": 0.453,
+    "ttfp_p90": 0.636,
+    "ttfp_p95": 0.708,
+    "ttfp_p99": 0.854,
+    "ttfp_max": 1.026,
+    "ttlb_p50": 3.905,
+    "ttlb_p95": 4.579,
+    "ttlb_p99": 4.652,
+    "stall_p95": 0.569,
+    "avg_audio_s": 3.63,
+    "server": {
+      "active": 0,
+      "waiting": 0,
+      "ticks": 56200,
+      "avg_tick_ms": 8.227,
+      "gen_tokens": 2471681
+    }
+  },
+  {
+    "concurrency": 1000,
+    "duration_s": 71.1,
+    "requests": 4575,
+    "errors": 0,
+    "rps": 64.34,
+    "audio_xrt": 235.0,
+    "ttfp_p50": 0.61,
+    "ttfp_p90": 3.655,
+    "ttfp_p95": 4.339,
+    "ttfp_p99": 4.834,
+    "ttfp_max": 5.074,
+    "ttlb_p50": 15.339,
+    "ttlb_p95": 17.429,
+    "ttlb_p99": 19.615,
+    "stall_p95": 11.996,
+    "avg_audio_s": 3.65,
+    "server": {
+      "active": 0,
+      "waiting": 0,
+      "ticks": 59582,
+      "avg_tick_ms": 8.718,
+      "gen_tokens": 2875729
+    }
+  }
+]

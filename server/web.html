@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Streaming TTS Lab</title>
+  <style>
+    :root { color-scheme: dark; --bg:#090b10; --panel:#121621; --line:#252b3a; --text:#f4f6fb; --muted:#929bad; --accent:#7c9cff; --accent2:#9c7cff; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; display:grid; place-items:center; background:radial-gradient(circle at 50% -20%,#242b48 0,#10131d 34%,var(--bg) 70%); color:var(--text); font:15px/1.5 Inter,ui-sans-serif,system-ui,sans-serif; }
+    main { width:min(760px,calc(100% - 32px)); }
+    header { margin-bottom:22px; }
+    h1 { margin:0; font-size:clamp(28px,5vw,45px); letter-spacing:-.045em; font-weight:720; }
+    header p { color:var(--muted); margin:7px 0 0; font-size:16px; }
+    .card { background:color-mix(in srgb,var(--panel) 94%,transparent); border:1px solid var(--line); border-radius:20px; padding:22px; box-shadow:0 24px 80px #0007; backdrop-filter:blur(14px); }
+    label { display:block; color:var(--muted); font-size:12px; font-weight:650; letter-spacing:.08em; text-transform:uppercase; margin-bottom:9px; }
+    textarea { width:100%; min-height:190px; resize:vertical; border:1px solid var(--line); border-radius:14px; padding:16px; background:#0a0d14; color:var(--text); font:17px/1.55 inherit; outline:none; transition:border .15s,box-shadow .15s; }
+    select { width:100%; margin-bottom:16px; border:1px solid var(--line); border-radius:11px; padding:10px 12px; background:#0a0d14; color:var(--text); font:15px inherit; outline:none; }
+    select:focus { border-color:var(--accent); box-shadow:0 0 0 3px #7c9cff22; }
+    textarea:focus { border-color:var(--accent); box-shadow:0 0 0 3px #7c9cff22; }
+    .actions { display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; }
+    button { border:0; border-radius:12px; padding:11px 17px; font:650 14px inherit; cursor:pointer; color:white; background:linear-gradient(135deg,var(--accent),var(--accent2)); transition:transform .12s,opacity .12s; }
+    button:hover:not(:disabled) { transform:translateY(-1px); }
+    button:disabled { opacity:.42; cursor:not-allowed; }
+    button.secondary { background:#222838; color:#dce2ef; }
+    .status { margin-top:18px; border-top:1px solid var(--line); padding-top:17px; display:grid; grid-template-columns:1fr auto; gap:12px; align-items:center; }
+    .state { display:flex; align-items:center; gap:10px; min-width:0; }
+    .dot { width:9px; height:9px; border-radius:50%; background:#697083; box-shadow:0 0 0 5px #69708318; flex:0 0 auto; }
+    .dot.live { background:#5ee6a8; box-shadow:0 0 0 5px #5ee6a822; animation:pulse 1.4s infinite; }
+    .dot.error { background:#ff6874; box-shadow:0 0 0 5px #ff687422; }
+    .message { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .metrics { color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; }
+    .bar { height:3px; background:#222838; border-radius:3px; overflow:hidden; margin-top:15px; }
+    .bar i { display:block; height:100%; width:0; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width .25s; }
+    .loadtest { margin-top:20px; padding-top:18px; border-top:1px solid var(--line); }
+    .loadhead { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:11px; }
+    .loadhead label { margin:0; }
+    .badge { color:#aeb7c9; background:#202636; border:1px solid #30384a; border-radius:999px; padding:3px 9px; font-size:12px; font-variant-numeric:tabular-nums; }
+    .loadcontrols { display:flex; gap:9px; align-items:center; flex-wrap:wrap; }
+    input[type=number] { width:112px; border:1px solid var(--line); border-radius:11px; padding:10px 12px; background:#0a0d14; color:var(--text); font:15px inherit; outline:none; }
+    input[type=number]:focus { border-color:var(--accent); box-shadow:0 0 0 3px #7c9cff22; }
+    .loadnote { color:var(--muted); margin-top:10px; font-size:13px; font-variant-numeric:tabular-nums; }
+    @keyframes pulse { 50% { opacity:.55; } }
+    @media(max-width:560px){ .card{padding:16px}.status{grid-template-columns:1fr}.metrics{padding-left:19px} }
+  </style>
+</head>
+<body>
+<main>
+  <header><h1>Streaming TTS Lab</h1><p>Choose a model or voice, then listen while it generates.</p></header>
+  <section class="card">
+    <label for="model">Model / voice</label>
+    <select id="model"><option value="hexgrad/Kokoro-82M">hexgrad/Kokoro-82M</option></select>
+    <label for="text">Text to speak</label>
+    <textarea id="text" maxlength="4000">The quickest way to understand streaming speech is to hear it begin before the sentence is finished generating.</textarea>
+    <div class="actions">
+      <button id="generate">Generate and play</button>
+      <button id="stop" class="secondary" disabled>Stop</button>
+      <button id="download" class="secondary" disabled>Download WAV</button>
+    </div>
+    <div class="bar"><i id="bar"></i></div>
+    <div class="status">
+      <div class="state"><span class="dot" id="dot"></span><span class="message" id="message">Ready</span></div>
+      <div class="metrics" id="metrics">24 kHz PCM</div>
+    </div>
+    <div class="loadtest">
+      <div class="loadhead"><label for="concurrency">Background stress load</label><span class="badge" id="loadBadge">Stopped</span></div>
+      <div class="loadcontrols">
+        <input id="concurrency" type="number" min="1" max="5000" value="100" aria-label="Concurrent background requests">
+        <button id="loadStart" class="secondary">Start load</button>
+        <button id="loadStop" class="secondary" disabled>Stop load</button>
+      </div>
+      <div class="loadnote" id="loadStatus">Continuously generates and drains speech while you use the player.</div>
+    </div>
+  </section>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const SAMPLE_RATE = 24000;
+let context, controller, sources = [], pcmParts = [], nextStart = 0;
+
+function setState(message, kind = '', metrics = '24 kHz PCM') {
+  $('message').textContent = message;
+  $('dot').className = 'dot ' + kind;
+  $('metrics').textContent = metrics;
+}
+
+function stopPlayback() {
+  if (controller) controller.abort();
+  controller = null;
+  for (const source of sources) { try { source.stop(); } catch {} }
+  sources = [];
+  nextStart = 0;
+  $('generate').disabled = false;
+  $('stop').disabled = true;
+  $('bar').style.width = '0';
+}
+
+function pcmToWav(parts) {
+  const length = parts.reduce((n, part) => n + part.byteLength, 0);
+  const out = new ArrayBuffer(44 + length), view = new DataView(out);
+  const str = (offset, value) => [...value].forEach((c, i) => view.setUint8(offset + i, c.charCodeAt(0)));
+  str(0,'RIFF'); view.setUint32(4,36+length,true); str(8,'WAVE'); str(12,'fmt ');
+  view.setUint32(16,16,true); view.setUint16(20,1,true); view.setUint16(22,1,true);
+  view.setUint32(24,SAMPLE_RATE,true); view.setUint32(28,SAMPLE_RATE*2,true);
+  view.setUint16(32,2,true); view.setUint16(34,16,true); str(36,'data'); view.setUint32(40,length,true);
+  let offset = 44; for (const part of parts) { new Uint8Array(out,offset,part.byteLength).set(new Uint8Array(part)); offset += part.byteLength; }
+  return new Blob([out], {type:'audio/wav'});
+}
+
+
+async function waitForLookahead(signal, seconds = 4) {
+  while (nextStart - context.currentTime > seconds) {
+    if (signal.aborted) throw new DOMException('Stopped', 'AbortError');
+    const excess = nextStart - context.currentTime - seconds;
+    await new Promise(resolve => setTimeout(resolve, Math.min(250, Math.max(20, excess * 1000))));
+  }
+}
+
+async function generate() {
+  const text = $('text').value.trim();
+  if (!text) return;
+  stopPlayback();
+  context ||= new AudioContext({latencyHint:'interactive'});
+  await context.resume();
+  controller = new AbortController();
+  const signal = controller.signal;
+  pcmParts = []; sources = []; nextStart = 0;
+  $('generate').disabled = true; $('stop').disabled = false; $('download').disabled = true;
+  $('bar').style.width = '5%'; setState('Connecting','live');
+  const started = performance.now(); let firstByte, bytes = 0, carry = null;
+  try {
+    const response = await fetch('/tts', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text, model:$('model').value, model_options:{}}), signal
+    });
+    if (!response.ok) throw new Error((await response.text()) || `HTTP ${response.status}`);
+    const segments = Number(response.headers.get('X-Text-Segments') || 1);
+    const reader = response.body.getReader();
+    while (true) {
+      if (bytes) await waitForLookahead(signal, 4);
+      const {value, done} = await reader.read();
+      if (done) break;
+      let data = value;
+      if (carry !== null) { const joined = new Uint8Array(data.length+1); joined[0]=carry; joined.set(data,1); data=joined; carry=null; }
+      if (data.length & 1) { carry=data[data.length-1]; data=data.subarray(0,data.length-1); }
+      if (!data.length) continue;
+      const firstChunk = firstByte === undefined;
+      if (firstChunk) firstByte = performance.now();
+      const copy = data.slice().buffer; pcmParts.push(copy); bytes += data.byteLength;
+      const samples = data.byteLength >> 1, floats = new Float32Array(samples), view = new DataView(data.buffer,data.byteOffset,data.byteLength);
+      for (let i=0;i<samples;i++) floats[i]=view.getInt16(i*2,true)/32768;
+      const buffer=context.createBuffer(1,samples,SAMPLE_RATE); buffer.copyToChannel(floats,0);
+      const source=context.createBufferSource(); source.buffer=buffer; source.connect(context.destination);
+      nextStart=Math.max(nextStart,context.currentTime+(firstChunk?0.4:0.035));
+      source.start(nextStart); nextStart+=buffer.duration; sources.push(source);
+      const audioSeconds=bytes/2/SAMPLE_RATE, ttfb=((firstByte-started)/1000).toFixed(3);
+      setState(
+        `Streaming ${segments} API segment${segments === 1 ? '' : 's'}`,
+        'live',
+        `${ttfb}s TTFB · ${audioSeconds.toFixed(1)}s audio`
+      );
+      $('bar').style.width = `${Math.min(96, 8 + audioSeconds * 2)}%`;
+    }
+    const total=((performance.now()-started)/1000).toFixed(2), audioSeconds=bytes/2/SAMPLE_RATE;
+    setState('Generation complete','',`${total}s · ${audioSeconds.toFixed(1)}s audio · ${segments} segments`);
+    $('bar').style.width='100%'; $('download').disabled=!pcmParts.length;
+  } catch (error) {
+    if (error.name !== 'AbortError') setState(error.message || 'Generation failed','error');
+    else setState('Stopped');
+  } finally {
+    controller=null; $('generate').disabled=false; $('stop').disabled=true;
+  }
+}
+
+async function loadModels() {
+  try {
+    const payload = await fetch('/v1/models', {cache:'no-store'}).then(r => r.json());
+    const models = payload.data || [];
+    if (!models.length) return;
+    $('model').replaceChildren(...models.map(item => {
+      const option = document.createElement('option');
+      option.value = item.id;
+      option.textContent = item.id;
+      return option;
+    }));
+  } catch {}
+}
+
+async function refreshStress() {
+  try {
+    const state = await fetch('/stress', {cache:'no-store'}).then(r => r.json());
+    const running = state.running || 0;
+    $('loadBadge').textContent = running ? `${running} active` : 'Stopped';
+    $('loadStart').disabled = !!running;
+    $('loadStop').disabled = !running;
+    $('loadStatus').textContent = running
+      ? `${state.model} · ${state.requests} requests complete · ${state.audio_xrt}× audio throughput · ${state.errors} errors`
+      : state.requests
+        ? `Stopped · ${state.model} · ${state.requests} requests complete · ${state.errors} errors`
+        : 'Continuously generates the selected model while you use the player.';
+  } catch {
+    $('loadBadge').textContent = 'Unavailable';
+  }
+}
+
+async function startStress() {
+  const concurrency = Math.max(1, Number($('concurrency').value) || 1);
+  const model = $('model').value;
+  $('loadStart').disabled = true;
+  await fetch('/stress/start', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({concurrency, model})
+  });
+  await refreshStress();
+}
+
+async function stopStress() {
+  $('loadStop').disabled = true;
+  await fetch('/stress/stop', {method:'POST'});
+  await refreshStress();
+}
+
+$('generate').addEventListener('click', generate);
+$('stop').addEventListener('click', () => { stopPlayback(); setState('Stopped'); });
+$('download').addEventListener('click', () => { const a=document.createElement('a'); a.href=URL.createObjectURL(pcmToWav(pcmParts)); a.download='chatterbox.wav'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); });
+$('text').addEventListener('keydown', event => { if ((event.metaKey||event.ctrlKey)&&event.key==='Enter') generate(); });
+loadModels();
+$('loadStart').addEventListener('click', startStress);
+$('loadStop').addEventListener('click', stopStress);
+refreshStress();
+setInterval(refreshStress, 1000);
+</script>
+</body>
+</html>

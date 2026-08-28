@@ -201,6 +201,166 @@ Defaults reproduce the Table 1 configuration from our paper
 (block size 16, max 10 steps per block, temperature 0.6, time-shift τ=0.1,
 CFG scale 1.0, zero-text-batch + `pmi_cfg` + `zero_all` null prefix).
 
+## Unified continuous-batching server
+
+`server.serve` is the common worker entry point for all three engines. Each
+worker owns one model and one GPU, while every engine uses the same thread-safe
+priority admission queue, wakeup lifecycle, model registry, metrics surface,
+and raw 24kHz PCM API:
+
+```bash
+HIP_VISIBLE_DEVICES=0 python -m server.serve --model flash --port 8020
+HIP_VISIBLE_DEVICES=1 python -m server.serve --model turbo --port 8021
+HIP_VISIBLE_DEVICES=2 python -m server.serve --model kokoro --port 8030
+```
+
+Canonical Hugging Face IDs are accepted interchangeably:
+
+```bash
+python -m server.serve --model ResembleAI/chatterbox-flash --port 8020
+python -m server.serve --model ResembleAI/chatterbox-turbo --port 8021
+python -m server.serve --model hexgrad/Kokoro-82M --port 8030
+```
+
+The execution cadence remains model-specific. Turbo admits work between
+autoregressive token ticks, Flash between block-diffusion ticks, and Kokoro
+between exact-length acoustic batches. This preserves each model's inference
+math while sharing vLLM-style admission and fleet routing.
+
+Put heterogeneous workers behind one model-aware endpoint:
+
+```bash
+python -m server.router \
+  --upstream http://127.0.0.1:8020 http://127.0.0.1:8021 http://127.0.0.1:8030 \
+  --capacity 128 256 384 \
+  --default-model ResembleAI/chatterbox-turbo
+```
+
+Requests use a small common envelope and a strict model-specific dictionary:
+
+```json
+{
+  "model": "hexgrad/Kokoro-82M",
+  "text": "This request uses Kokoro.",
+  "priority": "interactive",
+  "model_options": {
+    "voice": "af_heart",
+    "language": "a",
+    "speed": 1.0
+  }
+}
+```
+
+`text`, `model`, and `priority` have the same meaning for every engine.
+Model-specific keys outside `model_options`, unknown options, and non-object
+`model_options` are rejected. Each worker logs its complete JSON capability
+document at startup and returns it from `GET /healthz`. The router merges voice
+availability across compatible shards and includes capabilities in
+`GET /v1/models` and its own `GET /healthz`.
+
+### Direct OpenAI speech API
+
+Every `server.serve` worker exposes `POST /v1/audio/speech`; the router is not
+required. Point an OpenAI client at the worker and use any non-empty API key:
+
+```python
+from openai import OpenAI
+
+client = OpenAI(base_url="http://127.0.0.1:8030/v1", api_key="unused")
+with client.audio.speech.with_streaming_response.create(
+    model="tts-1",
+    voice="alloy",
+    input="This request goes directly to the Kokoro worker.",
+    response_format="pcm",
+) as response:
+    for pcm_chunk in response.iter_bytes():
+        consume_pcm_s16le_24khz_mono(pcm_chunk)
+```
+
+The standard `tts-1`, `tts-1-hd`, and `gpt-4o-mini-tts` model names select the
+model loaded by that worker. Canonical Hugging Face model IDs also work.
+Built-in OpenAI voice names select the base Chatterbox voice; Kokoro maps known
+equivalents when loaded and otherwise uses its configured default voice.
+Registered Turbo LoRA names and loaded Kokoro voice names remain selectable
+directly.
+
+`response_format` accepts `mp3` (the default), `opus`, `aac`, `flac`, `wav`,
+and raw `pcm`. PCM is streamed as signed little-endian 16-bit, mono, 24kHz
+audio. `stream_format="sse"` emits `speech.audio.delta` and
+`speech.audio.done` events. Unsupported controls and malformed requests use
+the OpenAI error envelope. `GET /v1/models` reports the worker's loaded model
+and capabilities.
+
+## Dynamic LoRA voices in the Turbo server
+
+The continuous-batching Turbo server can apply different PEFT LoRA adapters
+to different rows in the same batch without merging them into the base model.
+Register trusted adapters at startup using vLLM-style `name=path` entries:
+
+```bash
+python -m server.serve --model turbo \
+  --lora-modules voice-a=/srv/voices/a voice-b=org/voice-b \
+  --max-lora-rank 64
+```
+
+Each adapter must contain `adapter_config.json` and
+`adapter_model.safetensors`. GPT-2 `c_attn`, attention `c_proj`, `c_fc`, and
+MLP `c_proj` targets are supported. Adapter bias, DoRA, `modules_to_save`, and
+incomplete or incorrectly shaped A/B pairs are rejected.
+
+Select a registered adapter through `model_options.voice`:
+
+```bash
+curl -X POST http://localhost:8020/tts \
+  -H 'Content-Type: application/json' \
+  -d '{"model":"ResembleAI/chatterbox-turbo","text":"This request uses voice A.","model_options":{"voice":"voice-a"}}' \
+  --output voice-a.pcm
+```
+
+Use `"voice":"base"` for the unadapted model. `GET /healthz` lists registered
+adapters and advertises them in the `voice` option enum. The multi-shard router
+routes a request only to a worker that loaded the selected voice. Filesystem or
+Hub paths are never accepted from inference requests.
+
+
+
+## Kokoro-82M backend
+
+`server.kokoro_app` serves the Apache-2.0 `hexgrad/Kokoro-82M` v1.0 model
+through the same raw 24kHz PCM `/tts` contract:
+
+```bash
+HIP_VISIBLE_DEVICES=0 python -m server.serve --model kokoro \
+  --port 8030 --dtype fp32 --batch-size 384 --chunk-chars 512
+```
+
+Select any loaded canonical Kokoro v1.0 voice through `model_options`:
+
+```json
+{
+  "model": "hexgrad/Kokoro-82M",
+  "text": "This request uses Kokoro.",
+  "model_options": {"voice": "af_heart", "speed": 1.0}
+}
+```
+
+The backend preloads all 54 canonical voice packs and exposes them through
+`GET /healthz`. Japanese and Mandarin phonemization require the declared
+`misaki[ja,zh]` dependencies; Japanese also requires the UniDic dictionary.
+The heterogeneous router discovers model and voice capabilities from each
+backend and routes only to a server that supports the requested combination.
+
+Kokoro's bidirectional recurrent text encoders make ordinary padded inference
+incorrect: padding changes valid waveform rows. The backend therefore uses
+exact-token-length microbatches, then groups decoder rows by predicted frame
+length. A deadline-ordered continuous scheduler batches whole router segments;
+it does not subdivide text to improve batch occupancy. The deployment preserves
+the same router/load-balancer contract
+as the Chatterbox engines. Canonical FP32 execution preserves the released
+voice model's waveform quality. API text segmentation and four-second
+lookahead remain at the router layer; the backend only splits text that exceeds
+its 512-character context boundary.
+
 ## Project layout
 
 ```

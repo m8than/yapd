@@ -1,0 +1,50 @@
+[
+  {
+    "concurrency": 1000,
+    "duration_s": 173.2,
+    "requests": 6580,
+    "errors": 0,
+    "rps": 37.99,
+    "audio_xrt": 138.3,
+    "ttfp_p50": 25.104,
+    "ttfp_p90": 25.752,
+    "ttfp_p95": 25.898,
+    "ttfp_p99": 25.998,
+    "ttfp_max": 26.067,
+    "ttlb_p50": 26.03,
+    "ttlb_p95": 27.875,
+    "ttlb_p99": 30.335,
+    "avg_audio_s": 3.64,
+    "server": {
+      "active": 0,
+      "waiting": 0,
+      "ticks": 49133,
+      "avg_tick_ms": 6.89,
+      "gen_tokens": 1100610
+    }
+  },
+  {
+    "concurrency": 2000,
+    "duration_s": 196.4,
+    "requests": 7376,
+    "errors": 0,
+    "rps": 37.55,
+    "audio_xrt": 136.9,
+    "ttfp_p50": 50.619,
+    "ttfp_p90": 53.181,
+    "ttfp_p95": 53.446,
+    "ttfp_p99": 53.874,
+    "ttfp_max": 54.877,
+    "ttlb_p50": 52.126,
+    "ttlb_p95": 57.742,
+    "ttlb_p99": 59.857,
+    "avg_audio_s": 3.65,
+    "server": {
+      "active": 0,
+      "waiting": 0,
+      "ticks": 62371,
+      "avg_tick_ms": 7.534,
+      "gen_tokens": 1750804
+    }
+  }
+]
