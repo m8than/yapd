@@ -20,6 +20,7 @@ FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
+    VIRTUAL_ENV=/app/.venv \
     PATH="/app/.venv/bin:$PATH"
 
 RUN apt-get update \
@@ -28,7 +29,9 @@ RUN apt-get update \
 
 WORKDIR /app
 COPY --from=builder /app /app
+RUN /app/.venv/bin/python -c \
+    "import torch, torchaudio; print(f'torch={torch.__version__} torchaudio={torchaudio.__version__}')"
 
 EXPOSE 8020
-ENTRYPOINT ["python", "-m", "server.serve"]
+ENTRYPOINT ["/app/.venv/bin/python", "-m", "server.serve"]
 CMD ["--model", "flash", "--host", "0.0.0.0", "--port", "8020"]
