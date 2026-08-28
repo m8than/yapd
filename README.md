@@ -291,6 +291,23 @@ audio. `stream_format="sse"` emits `speech.audio.delta` and
 the OpenAI error envelope. `GET /v1/models` reports the worker's loaded model
 and capabilities.
 
+### Container image
+
+Every push to `master` or `main`, and every `v*` tag, publishes a CUDA-capable
+image to `ghcr.io/m8than/yapd`. The image starts the Flash worker by default:
+
+```bash
+docker run --rm --gpus all -p 8020:8020 ghcr.io/m8than/yapd:latest
+```
+
+Arguments after the image name are passed to `server.serve`, so the same image
+can run another worker:
+
+```bash
+docker run --rm --gpus all -p 8030:8030 ghcr.io/m8than/yapd:latest \
+  --model kokoro --host 0.0.0.0 --port 8030
+```
+
 ## Dynamic LoRA voices in the Turbo server
 
 The continuous-batching Turbo server can apply different PEFT LoRA adapters

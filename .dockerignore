@@ -1,0 +1,13 @@
+.git
+.github
+.venv
+.venv*
+**/__pycache__
+**/*.py[cod]
+*.egg-info
+bench_results
+figures
+eval_out_smoke
+syn_out
+test_out
+out.wav
