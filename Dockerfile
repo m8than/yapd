@@ -29,8 +29,10 @@ RUN apt-get update \
 
 WORKDIR /app
 COPY --from=builder /app /app
-RUN /app/.venv/bin/python -c \
-    "import torch, torchaudio; print(f'torch={torch.__version__} torchaudio={torchaudio.__version__}')"
+RUN ln -sfn /app/.venv/bin/python /usr/local/bin/python \
+    && ln -sfn /app/.venv/bin/python /usr/local/bin/python3 \
+    && python -c \
+        "import sys, torch, torchaudio; print(f'python={sys.executable} torch={torch.__version__} torchaudio={torchaudio.__version__}')"
 
 EXPOSE 8020
 ENTRYPOINT ["/app/.venv/bin/python", "-m", "server.serve"]
