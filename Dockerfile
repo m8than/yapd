@@ -14,13 +14,9 @@ RUN apt-get update \
 WORKDIR /app
 
 COPY pyproject.toml uv.lock ./
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --no-install-project
-
+RUN uv sync --frozen --no-dev --no-install-project --no-cache
 COPY . .
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev
-
+RUN uv sync --frozen --no-dev --no-cache
 EXPOSE 8020
 ENTRYPOINT ["python", "-m", "server.serve"]
 CMD ["--model", "flash", "--host", "0.0.0.0", "--port", "8020"]
