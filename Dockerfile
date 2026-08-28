@@ -29,8 +29,10 @@ RUN apt-get update \
 
 WORKDIR /app
 COPY --from=builder /app /app
-RUN ln -sfn /app/.venv/bin/python /usr/local/bin/python \
-    && ln -sfn /app/.venv/bin/python /usr/local/bin/python3 \
+RUN rm -f /usr/local/bin/python \
+    && printf '%s\n' '#!/bin/sh' 'exec /app/.venv/bin/python "$@"' \
+        > /usr/local/bin/python \
+    && chmod 0755 /usr/local/bin/python \
     && python -c \
         "import sys, torch, torchaudio; print(f'python={sys.executable} torch={torch.__version__} torchaudio={torchaudio.__version__}')"
 
