@@ -293,18 +293,23 @@ and capabilities.
 
 ### Container image
 
-Every push to `master` or `main`, and every `v*` tag, publishes a CUDA-capable
-image to `ghcr.io/m8than/yapd`. The image starts the Flash worker by default:
+Every push to `master` or `main`, and every `v*` tag, publishes a ROCm image
+to `ghcr.io/m8than/yapd`. It is based on AMD's official ROCm 7.2.4/PyTorch
+2.7.1 image and starts the Flash worker by default:
 
 ```bash
-docker run --rm --gpus all -p 8020:8020 ghcr.io/m8than/yapd:latest
+docker run --rm --device=/dev/kfd --device=/dev/dri \
+  --group-add video --ipc=host --security-opt seccomp=unconfined \
+  -p 8020:8020 ghcr.io/m8than/yapd:latest
 ```
 
 Arguments after the image name are passed to `server.serve`, so the same image
 can run another worker:
 
 ```bash
-docker run --rm --gpus all -p 8030:8030 ghcr.io/m8than/yapd:latest \
+docker run --rm --device=/dev/kfd --device=/dev/dri \
+  --group-add video --ipc=host --security-opt seccomp=unconfined \
+  -p 8030:8030 ghcr.io/m8than/yapd:latest \
   --model kokoro --host 0.0.0.0 --port 8030
 ```
 

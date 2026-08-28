@@ -1,41 +1,35 @@
-FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS builder
+FROM ghcr.io/astral-sh/uv:latest AS uv
 
-ENV DEBIAN_FRONTEND=noninteractive \
-    UV_COMPILE_BYTECODE=1 \
-    UV_LINK_MODE=copy
+FROM rocm/pytorch:rocm7.2.4_ubuntu24.04_py3.12_pytorch_release_2.7.1
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends build-essential cmake ninja-build \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
-
-COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev --no-install-project --no-cache
-COPY . .
-RUN uv sync --frozen --no-dev --no-cache
-
-FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+COPY --from=uv /uv /uvx /bin/
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    VIRTUAL_ENV=/app/.venv \
-    PATH="/app/.venv/bin:$PATH"
+    VIRTUAL_ENV=/opt/venv \
+    PATH="/opt/venv/bin:/opt/rocm/bin:$PATH" \
+    LD_LIBRARY_PATH="/opt/rocm/lib:$LD_LIBRARY_PATH"
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends espeak-ng libsndfile1 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-COPY --from=builder /app /app
-RUN rm -f /usr/local/bin/python \
-    && printf '%s\n' '#!/bin/sh' 'exec /app/.venv/bin/python "$@"' \
-        > /usr/local/bin/python \
-    && chmod 0755 /usr/local/bin/python \
+
+COPY pyproject.toml uv.lock ./
+RUN uv export --frozen --no-dev --no-emit-project \
+        --prune torch --prune torchaudio --prune torchvision \
+        --output-file /tmp/requirements.txt \
+    && uv pip install --python /opt/venv/bin/python --no-cache \
+        --requirement /tmp/requirements.txt \
+    && rm /tmp/requirements.txt
+
+COPY . .
+RUN uv pip install --python /opt/venv/bin/python --no-cache --no-deps . \
     && python -c \
-        "import sys, torch, torchaudio; print(f'python={sys.executable} torch={torch.__version__} torchaudio={torchaudio.__version__}')"
+        "import sys, torch, torchaudio; assert torch.version.hip; assert torch.version.cuda is None; print(f'python={sys.executable} torch={torch.__version__} hip={torch.version.hip} torchaudio={torchaudio.__version__}')"
 
 EXPOSE 8020
-ENTRYPOINT ["/app/.venv/bin/python", "-m", "server.serve"]
+ENTRYPOINT ["/opt/venv/bin/python", "-m", "server.serve"]
 CMD ["--model", "flash", "--host", "0.0.0.0", "--port", "8020"]
