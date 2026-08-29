@@ -28,7 +28,7 @@ RUN uv export --frozen --no-dev --no-emit-project \
 COPY . .
 RUN uv pip install --python /opt/venv/bin/python --no-cache --no-deps . \
     && python -c \
-        "import sys, torch, torchaudio; assert torch.version.hip; assert torch.version.cuda is None; print(f'python={sys.executable} torch={torch.__version__} hip={torch.version.hip} torchaudio={torchaudio.__version__}')"
+        "import sys, perth, torch, torchaudio; assert torch.version.hip; assert torch.version.cuda is None; assert perth.PerthImplicitWatermarker is not None; perth.PerthImplicitWatermarker(); print(f'python={sys.executable} torch={torch.__version__} hip={torch.version.hip} torchaudio={torchaudio.__version__}')"
 
 EXPOSE 8020
 ENTRYPOINT ["/opt/venv/bin/python", "-m", "server.serve"]
